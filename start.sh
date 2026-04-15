@@ -231,6 +231,23 @@ CONFIG_JSON=$(echo "$CONFIG_JSON" | jq ".gateway.auth.token = \"$GATEWAY_TOKEN\"
 # Model configuration at top level
 CONFIG_JSON=$(echo "$CONFIG_JSON" | jq ".agents.defaults.model = \"$LLM_MODEL\"")
 
+# Custom provider injection
+if [ -n "$CUSTOM_PROVIDER_NAME" ] && [ -n "$CUSTOM_BASE_URL" ] && [ -n "$CUSTOM_MODEL_ID" ]; then
+  echo "🔧 Adding custom provider: $CUSTOM_PROVIDER_NAME"
+
+  CONFIG_JSON=$(echo "$CONFIG_JSON" | jq \
+    ".models.mode = \"merge\" |
+     .models.providers[\"$CUSTOM_PROVIDER_NAME\"] = {
+       \"baseUrl\": \"$CUSTOM_BASE_URL\",
+       \"apiKey\": \"$LLM_API_KEY\",
+       \"api\": \"openai-completions\",
+       \"models\": [{
+         \"id\": \"$CUSTOM_MODEL_ID\",
+         \"name\": \"$CUSTOM_MODEL_ID\"
+       }]
+     }")
+fi
+
 # Browser configuration (managed local Chromium in HF/Docker)
 BROWSER_EXECUTABLE_PATH=""
 for candidate in /usr/bin/chromium /usr/bin/chromium-browser /snap/bin/chromium; do
